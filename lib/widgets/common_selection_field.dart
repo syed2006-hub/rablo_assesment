@@ -42,6 +42,7 @@ class CommonSelectionField<T> extends StatelessWidget {
           const SizedBox(height: 6),
         ],
         DropdownButtonFormField<T>(
+          isExpanded: true,
           initialValue: selectedValue,
           items: options.map((T item) {
             final String displayText = optionLabelBuilder != null

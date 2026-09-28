@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "47810367952",
+    "project_id": "rablo-rablo",
+    "storage_bucket": "rablo-rablo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:47810367952:android:669db0fa798ff553b2a9d5",
+        "android_client_info": {
+          "package_name": "com.example.rablo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcFWrpcZQjbgWRwvoNPxdgXBM9w5yQL3M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:47810367952:android:2b12ecb44cba3a9eb2a9d5",
+        "android_client_info": {
+          "package_name": "com.rablo.fitness.fitness_app_clean"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcFWrpcZQjbgWRwvoNPxdgXBM9w5yQL3M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

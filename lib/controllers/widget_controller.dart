@@ -11,9 +11,13 @@ class WidgetController extends GetxController {
       TextEditingController(text: 'alex@fitnessclub.com');
   final TextEditingController passwordController =
       TextEditingController(text: 'SecurePass123!');
+  final TextEditingController searchController =
+      TextEditingController(text: 'Yoga batch');
 
   final RxBool isPasswordHidden = true.obs;
   final RxBool isButtonLoading = false.obs;
+  final RxBool switchValue = true.obs;
+  final RxInt selectedDemoTabIndex = 1.obs;
 
   final RxString selectedPlan = 'Gold Quarterly (Recommended)'.obs;
   final List<String> planOptions = [
@@ -22,6 +26,8 @@ class WidgetController extends GetxController {
     'Gold Quarterly (Recommended)',
     'VIP Platinum Annual',
   ];
+
+  final List<String> demoTabs = ['All Members', 'Active (982)', 'Expiring (34)', 'Inactive'];
 
   void togglePasswordVisibility() {
     isPasswordHidden.value = !isPasswordHidden.value;
@@ -35,6 +41,14 @@ class WidgetController extends GetxController {
     if (newPlan != null) {
       selectedPlan.value = newPlan;
     }
+  }
+
+  void onSwitchChanged(bool val) {
+    switchValue.value = val;
+  }
+
+  void onDemoTabSelected(int index) {
+    selectedDemoTabIndex.value = index;
   }
 
   /// Displays the CommonPopup dialog
@@ -65,6 +79,7 @@ class WidgetController extends GetxController {
     nameController.dispose();
     emailController.dispose();
     passwordController.dispose();
+    searchController.dispose();
     super.onClose();
   }
 }
