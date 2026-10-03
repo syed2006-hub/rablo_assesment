@@ -9,6 +9,8 @@ class CommonPopup extends StatelessWidget {
   final String? message;
   final List<Widget>? actions;
   final EdgeInsetsGeometry padding;
+  final Color? backgroundColor;
+  final Color? titleColor;
 
   const CommonPopup({
     super.key,
@@ -17,6 +19,8 @@ class CommonPopup extends StatelessWidget {
     this.message,
     this.actions,
     this.padding = const EdgeInsets.all(20.0),
+    this.backgroundColor,
+    this.titleColor,
   });
 
   /// Static helper to show the popup dialog using GetX.
@@ -26,6 +30,8 @@ class CommonPopup extends StatelessWidget {
     Widget? content,
     List<Widget>? actions,
     bool barrierDismissible = true,
+    Color? backgroundColor,
+    Color? titleColor,
   }) {
     return Get.dialog<T>(
       CommonPopup(
@@ -33,6 +39,8 @@ class CommonPopup extends StatelessWidget {
         message: message,
         content: content,
         actions: actions,
+        backgroundColor: backgroundColor,
+        titleColor: titleColor,
       ),
       barrierDismissible: barrierDismissible,
     );
@@ -44,17 +52,17 @@ class CommonPopup extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.0),
       ),
-      backgroundColor: AppColors.white,
+      backgroundColor: backgroundColor ?? AppColors.white,
       titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       actionsPadding: const EdgeInsets.all(16),
       title: title != null
           ? Text(
               title!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.dark,
+                color: titleColor ?? AppColors.dark,
               ),
             )
           : null,

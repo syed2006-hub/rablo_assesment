@@ -3,17 +3,13 @@ import 'package:get/get.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_constants.dart';
 import '../../controllers/D1MM2_account_creation/account_creation_controller.dart';
-import '../../models/D1MM3_membership_planning/membership_plan_model.dart';
-import '../../utils/validators.dart';
-import '../../widgets/common_app_bar.dart';
 import '../../widgets/common_button.dart';
 import '../../widgets/common_container.dart';
-import '../../widgets/common_section_header.dart';
 import '../../widgets/common_selection_field.dart';
-import '../../widgets/common_switch_tile.dart';
 import '../../widgets/common_text_field.dart';
 
-/// D1MM2 – Account Creation & Member Registration Form Screen.
+/// D1MM2 – Account Creation & Onboarding Screen.
+/// Strictly implements the Figma design for member registration and profile setup.
 class AccountCreationFormScreen extends StatelessWidget {
   const AccountCreationFormScreen({super.key});
 
@@ -23,328 +19,654 @@ class AccountCreationFormScreen extends StatelessWidget {
         Get.put(AccountCreationController());
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      appBar: const CommonAppBar(
-        title: AppConstants.appName,
-        subtitle: 'D1MM2 – Member Registration & Account Creation',
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppConstants.defaultPadding),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Form(
-                key: controller.formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const CommonSectionHeader(
-                      title: 'Register New Member / Business',
-                      subtitle:
-                          'Capture profile data, membership plan tier, and onboarding details',
-                    ),
-                    const SizedBox(height: 8),
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background Trainer Photo strictly matching Figma
+          Image.asset(
+            'assets/images/welcome_bg.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
+            errorBuilder: (ctx, err, stack) => Container(
+              color: const Color(0xFF102124),
+              child: const Center(
+                child: Icon(Icons.fitness_center,
+                    size: 80, color: AppColors.primaryLight),
+              ),
+            ),
+          ),
 
-                    // Account Type Picker
-                    CommonContainer(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Account Category',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.dark,
-                            ),
+          // Deep Dark Gradient Overlay
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.2),
+                  Colors.black.withValues(alpha: 0.65),
+                  Colors.black.withValues(alpha: 0.95),
+                  Colors.black,
+                ],
+                stops: const [0.0, 0.25, 0.45, 0.75, 1.0],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+
+          // Scrollable Account Creation Content
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.defaultPadding,
+                vertical: 16,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 540),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header Section matching Figma typography
+                      const SizedBox(height: 12),
+                      const Text(
+                        "Let's begin!",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          fontStyle: FontStyle.italic,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Create your account to start your journey.',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Glassmorphic Card Container matching Figma styling
+                      CommonContainer(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color(0xFF22444C),
+                              Color(0xFF142B31),
+                            ],
                           ),
-                          const SizedBox(height: 10),
-                          Obx(
-                            () => Row(
-                              children: controller.accountTypes.map((type) {
-                                final isSelected =
-                                    controller.selectedAccountType.value == type;
-                                return Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 4.0),
-                                    child: InkWell(
-                                      onTap: () => controller
-                                          .selectedAccountType.value = type,
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: Container(
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              blurRadius: 30,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Form(
+                          key: controller.formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 1. Full Name (Auto-filled from social media login)
+                              _buildFieldLabel('Full Name'),
+                              CommonTextField(
+                                controller: controller.fullNameController,
+                                hintText: '(Auto-filled from social media login)',
+                                fillColor: const Color(0xFF284E56),
+                                textColor: Colors.white,
+                                hintColor: Colors.white54,
+                                borderColor: Colors.white12,
+                                borderRadius: 12,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 2. Phone Number
+                              _buildFieldLabel('Phone Number'),
+                              CommonTextField(
+                                controller: controller.phoneController,
+                                hintText: 'Enter mobile number',
+                                keyboardType: TextInputType.phone,
+                                prefixText: '+91  |  ',
+                                prefixStyle: const TextStyle(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                                fillColor: const Color(0xFF284E56),
+                                textColor: Colors.white,
+                                hintColor: Colors.white38,
+                                borderColor: Colors.white12,
+                                borderRadius: 12,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 3. Select Gender
+                              _buildFieldLabel('Select Gender'),
+                              Obx(
+                                () => Row(
+                                  children: controller.genderOptions.map((gender) {
+                                    final isSelected =
+                                        controller.selectedGender.value == gender;
+                                    return Expanded(
+                                      child: Padding(
                                         padding: const EdgeInsets.symmetric(
-                                            vertical: 10),
-                                        decoration: BoxDecoration(
-                                          color: isSelected
-                                              ? AppColors.dark
-                                              : AppColors.white,
+                                            horizontal: 4.0),
+                                        child: InkWell(
+                                          onTap: () =>
+                                              controller.toggleGender(gender),
                                           borderRadius:
-                                              BorderRadius.circular(10),
-                                          border: Border.all(
-                                            color: isSelected
-                                                ? AppColors.dark
-                                                : AppColors.lightGrey,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            type == 'Individual'
-                                                ? '👤 Individual'
-                                                : '🏢 Business (D1MM2.2)',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
+                                              BorderRadius.circular(12),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 11),
+                                            decoration: BoxDecoration(
                                               color: isSelected
-                                                  ? AppColors.primaryBright
-                                                  : AppColors.dark,
+                                                  ? const Color(0xFF1D3B42)
+                                                  : const Color(0xFF284E56),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: isSelected
+                                                    ? AppColors.primaryBright
+                                                    : Colors.white12,
+                                                width: isSelected ? 1.5 : 1,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  isSelected
+                                                      ? Icons.radio_button_checked
+                                                      : Icons.radio_button_off,
+                                                  color: isSelected
+                                                      ? AppColors.primaryBright
+                                                      : Colors.white54,
+                                                  size: 16,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  gender,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 13,
+                                                    fontWeight: isSelected
+                                                        ? FontWeight.bold
+                                                        : FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 4. Date of Birth (Must be 18+)
+                              _buildFieldLabelWithNote('Date of Birth', '(Must be 18+)'),
+                              CommonTextField(
+                                controller: controller.dobController,
+                                readOnly: true,
+                                onTap: controller.openCalendarDialog,
+                                hintText: 'DD - MM - YYYY',
+                                suffixIcon: IconButton(
+                                  icon: const Icon(
+                                    Icons.calendar_month_rounded,
+                                    color: Colors.white70,
+                                    size: 20,
                                   ),
+                                  onPressed: controller.openCalendarDialog,
+                                ),
+                                fillColor: const Color(0xFF284E56),
+                                textColor: Colors.white,
+                                hintColor: Colors.white54,
+                                borderColor: Colors.white12,
+                                borderRadius: 12,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 5. Profession (Choose the most defining role)
+                              _buildFieldLabelWithNote('Profession', '(Choose the most defining role)'),
+                              Obx(
+                                () => CommonSelectionField<String>(
+                                  options: controller.professionOptions,
+                                  selectedValue: controller.selectedProfession.value,
+                                  hintText: 'Select your Role',
+                                  fillColor: const Color(0xFF284E56),
+                                  dropdownColor: const Color(0xFF163238),
+                                  textColor: Colors.white,
+                                  iconColor: Colors.white70,
+                                  borderColor: Colors.white12,
+                                  borderRadius: 12,
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      controller.selectedProfession.value = val;
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 6. Objective (Select at-least four options)
+                              _buildFieldLabelWithNote(
+                                  'Objective', '(Select at-least four options)'),
+                              Obx(() {
+                                final selectedList =
+                                    controller.selectedObjectives.toList();
+                                return GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: 8,
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: 8,
+                                    crossAxisSpacing: 8,
+                                    childAspectRatio: 3.2,
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    if (index == 7) {
+                                      // "See all.." Capsule
+                                      return InkWell(
+                                        onTap: controller.openObjectivesModal,
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF1D3B42),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            border: Border.all(
+                                                color: AppColors.primaryBright,
+                                                width: 1),
+                                          ),
+                                          child: const Text(
+                                            'See all..',
+                                            style: TextStyle(
+                                              color: AppColors.primaryBright,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+
+                                    final objective =
+                                        controller.primaryObjectives[index];
+                                    final isSelected =
+                                        selectedList.contains(objective);
+
+                                    return InkWell(
+                                      onTap: () =>
+                                          controller.toggleObjective(objective),
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? const Color(0xFF1D3B42)
+                                              : const Color(0xFF284E56),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? AppColors.primaryBright
+                                                : Colors.white12,
+                                            width: isSelected ? 1.5 : 1,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          objective,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12.5,
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 );
-                              }).toList(),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
+                              }),
+                              const SizedBox(height: 16),
 
-                    // Personal & Contact Information
-                    CommonContainer(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Personal & Contact Details',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.dark,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          CommonTextField(
-                            controller: controller.fullNameController,
-                            label: 'Full Name *',
-                            hintText: 'e.g. Vikramaditya Singh',
-                            prefixIcon: const Icon(
-                              Icons.person_outline_rounded,
-                              color: AppColors.grey,
-                              size: 20,
-                            ),
-                            validator: (val) =>
-                                Validators.validateRequired(val, 'Full Name'),
-                          ),
-                          const SizedBox(height: 14),
-                          CommonTextField(
-                            controller: controller.emailController,
-                            label: 'Email Address *',
-                            hintText: 'vikram@example.com',
-                            keyboardType: TextInputType.emailAddress,
-                            prefixIcon: const Icon(
-                              Icons.email_outlined,
-                              color: AppColors.grey,
-                              size: 20,
-                            ),
-                            validator: Validators.validateEmail,
-                          ),
-                          const SizedBox(height: 14),
-                          CommonTextField(
-                            controller: controller.phoneController,
-                            label: 'Phone Number *',
-                            hintText: '+91 98765 43210',
-                            keyboardType: TextInputType.phone,
-                            prefixIcon: const Icon(
-                              Icons.phone_outlined,
-                              color: AppColors.grey,
-                              size: 20,
-                            ),
-                            validator: (val) =>
-                                Validators.validateRequired(val, 'Phone Number'),
-                          ),
-                          const SizedBox(height: 14),
-                          Obx(
-                            () => CommonSelectionField<String>(
-                              label: 'Gender',
-                              options: controller.genderOptions,
-                              selectedValue: controller.selectedGender.value,
-                              onChanged: (val) {
-                                if (val != null) {
-                                  controller.selectedGender.value = val;
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          CommonTextField(
-                            controller: controller.emergencyContactController,
-                            label: 'Emergency Contact & Relationship',
-                            hintText: '+91 98765 00000 (Parent/Spouse)',
-                            prefixIcon: const Icon(
-                              Icons.emergency_outlined,
-                              color: AppColors.grey,
-                              size: 20,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
+                              // 7. Address Line 1 (Can be on map)
+                              _buildFieldLabelWithNote(
+                                  'Address Line 1', '(Can be on map)'),
+                              CommonTextField(
+                                controller: controller.address1Controller,
+                                hintText: 'Enter or Pin the Address',
+                                suffixIcon: const Icon(
+                                  Icons.location_on_outlined,
+                                  color: Colors.white70,
+                                  size: 20,
+                                ),
+                                fillColor: const Color(0xFF284E56),
+                                textColor: Colors.white,
+                                hintColor: Colors.white54,
+                                borderColor: Colors.white12,
+                                borderRadius: 12,
+                              ),
+                              const SizedBox(height: 14),
 
-                    // Membership Plan Selection
-                    CommonContainer(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Membership Plan Tier',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.dark,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          Obx(
-                            () => CommonSelectionField<MembershipPlanModel>(
-                              label: 'Select Plan Tier *',
-                              options: controller.availablePlans,
-                              selectedValue: controller.selectedPlan.value,
-                              optionLabelBuilder: (plan) =>
-                                  '${plan.name} (${plan.formattedPrice} / ${plan.billingDuration})',
-                              onChanged: (val) {
-                                controller.selectedPlan.value = val;
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Business Details (Shown if Business Account selected)
-                    Obx(
-                      () => controller.selectedAccountType.value == 'Business'
-                          ? CommonContainer(
-                              margin: const EdgeInsets.only(bottom: 14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              // 8. City & State (Side-by-side)
+                              Row(
                                 children: [
-                                  const Text(
-                                    'D1MM2.2 Business Account Details',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.dark,
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildFieldLabel('City'),
+                                        CommonTextField(
+                                          controller: controller.cityController,
+                                          hintText: 'Enter City',
+                                          fillColor: const Color(0xFF284E56),
+                                          textColor: Colors.white,
+                                          hintColor: Colors.white54,
+                                          borderColor: Colors.white12,
+                                          borderRadius: 12,
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(height: 14),
-                                  CommonTextField(
-                                    controller:
-                                        controller.businessNameController,
-                                    label: 'Corporate / Gym Business Name',
-                                    hintText: 'e.g. Apex Health Ventures LLP',
-                                    prefixIcon: const Icon(
-                                      Icons.business_outlined,
-                                      color: AppColors.grey,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  CommonTextField(
-                                    controller: controller.gstNumberController,
-                                    label: 'GST / Tax Identification Number',
-                                    hintText: '29AAAAA0000A1Z5',
-                                    prefixIcon: const Icon(
-                                      Icons.receipt_long_outlined,
-                                      color: AppColors.grey,
-                                      size: 20,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildFieldLabel('State'),
+                                        CommonTextField(
+                                          controller: controller.stateController,
+                                          hintText: 'Enter State',
+                                          fillColor: const Color(0xFF284E56),
+                                          textColor: Colors.white,
+                                          hintColor: Colors.white54,
+                                          borderColor: Colors.white12,
+                                          borderRadius: 12,
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
+                              const SizedBox(height: 14),
 
-                    // Health Notes & Medical Disclaimer
-                    CommonContainer(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Health Background & Preferences',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.dark,
-                            ),
+                              // 9. Country & PIN Code (Side-by-side)
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildFieldLabel('Country'),
+                                        CommonTextField(
+                                          controller:
+                                              controller.countryController,
+                                          hintText: 'Enter Country',
+                                          fillColor: const Color(0xFF284E56),
+                                          textColor: Colors.white,
+                                          hintColor: Colors.white54,
+                                          borderColor: Colors.white12,
+                                          borderRadius: 12,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildFieldLabel('PIN Code'),
+                                        CommonTextField(
+                                          controller:
+                                              controller.pinCodeController,
+                                          hintText: '------',
+                                          keyboardType: TextInputType.number,
+                                          fillColor: const Color(0xFF284E56),
+                                          textColor: Colors.white,
+                                          hintColor: Colors.white54,
+                                          borderColor: Colors.white12,
+                                          borderRadius: 12,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+
+                              // 10. Address Line 2 (Optional)
+                              _buildFieldLabelWithNote(
+                                  'Address Line 2', '(Optional)'),
+                              CommonTextField(
+                                controller: controller.address2Controller,
+                                hintText: 'Enter your colony or locality',
+                                fillColor: const Color(0xFF284E56),
+                                textColor: Colors.white,
+                                hintColor: Colors.white54,
+                                borderColor: Colors.white12,
+                                borderRadius: 12,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 11. Preferred Language (Optional)
+                              _buildFieldLabelWithNote(
+                                  'Preferred Language', '(Optional)'),
+                              Obx(() {
+                                final selectedLangs =
+                                    controller.selectedLanguages.toList();
+                                return Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: controller.languageOptions.map((lang) {
+                                    final isSelected =
+                                        selectedLangs.contains(lang);
+                                    return InkWell(
+                                      onTap: () =>
+                                          controller.toggleLanguage(lang),
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 14, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? const Color(0xFF1D3B42)
+                                              : const Color(0xFF284E56),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? AppColors.primaryBright
+                                                : Colors.white12,
+                                            width: isSelected ? 1.5 : 1,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          lang,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12.5,
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                );
+                              }),
+                              const SizedBox(height: 20),
+
+                              // 12. Checkboxes for Terms & Consent
+                              Obx(
+                                () => Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: Checkbox(
+                                        value: controller.acceptedTerms.value,
+                                        activeColor: AppColors.primaryBright,
+                                        checkColor: Colors.black,
+                                        side: const BorderSide(
+                                            color: Colors.white54, width: 1.5),
+                                        onChanged: (val) {
+                                          controller.acceptedTerms.value =
+                                              val ?? false;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    const Expanded(
+                                      child: Text(
+                                        'I accept the terms and conditions and acknowledge that I have read and agree to abide by the company\'s policies and guidelines.',
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Obx(
+                                () => Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: Checkbox(
+                                        value: controller
+                                            .promotionalConsent.value,
+                                        activeColor: AppColors.primaryBright,
+                                        checkColor: Colors.black,
+                                        side: const BorderSide(
+                                            color: Colors.white54, width: 1.5),
+                                        onChanged: (val) {
+                                          controller.promotionalConsent.value =
+                                              val ?? false;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    const Expanded(
+                                      child: Text(
+                                        'I give consent to receive promotional communications from the company.',
+                                        style: TextStyle(
+                                          color: Colors.white60,
+                                          fontSize: 12,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // 13. Create Account CTA Button in Figma Bright Green
+                              Obx(
+                                () => CommonButton(
+                                  text: 'Create Account',
+                                  height: 52,
+                                  borderRadius: 14,
+                                  backgroundColor: AppColors.primaryBright,
+                                  textColor: Colors.black,
+                                  isLoading: controller.isLoading.value,
+                                  onPressed: controller.submitAccountCreation,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 14),
-                          CommonTextField(
-                            controller: controller.healthNotesController,
-                            label: 'Medical Considerations / Fitness Goals',
-                            hintText:
-                                'e.g. Lower back surgery recovery, marathon prep, dietary restrictions...',
-                            maxLines: 3,
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Preferences Switches
-                    Obx(
-                      () => CommonSwitchTile(
-                        title: 'Send Welcome Email & Digital Pass',
-                        subtitle: 'Sends QR entry badge directly to member email',
-                        icon: Icons.mark_email_read_outlined,
-                        value: controller.sendWelcomeEmail.value,
-                        onChanged: (val) =>
-                            controller.sendWelcomeEmail.value = val,
-                      ),
-                    ),
-                    Obx(
-                      () => CommonSwitchTile(
-                        title: 'Auto-Renew Membership Plan',
-                        subtitle: 'Automatically trigger renewal invoice on expiry',
-                        icon: Icons.autorenew_rounded,
-                        value: controller.autoRenewEnabled.value,
-                        onChanged: (val) =>
-                            controller.autoRenewEnabled.value = val,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    // Submit & Reset Actions
-                    Obx(
-                      () => CommonButton(
-                        text: controller.isLoading.value
-                            ? 'Creating Member Account...'
-                            : 'Submit & Create Member Account',
-                        isLoading: controller.isLoading.value,
-                        onPressed: controller.submitAccountCreation,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    CommonButton(
-                      text: 'Clear & Reset Form',
-                      backgroundColor: AppColors.backgroundLight,
-                      textColor: AppColors.dark,
-                      onPressed: controller.resetForm,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 30),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFieldLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6.0),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w600,
         ),
+      ),
+    );
+  }
+
+  Widget _buildFieldLabelWithNote(String label, String note) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6.0),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              note,
+              style: const TextStyle(
+                color: Colors.white38,
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

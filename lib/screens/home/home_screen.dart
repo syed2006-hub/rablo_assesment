@@ -7,6 +7,7 @@ import '../D1MM3_membership_planning/membership_list_screen.dart';
 import '../D1MM4_dashboard/dashboard_screen.dart';
 import '../D1MM5_my_profile/my_profile_screen.dart';
 import '../settings/settings_screen.dart';
+import '../../routes/app_routes.dart';
 
 /// Main Navigation Shell hosting Dashboard, Members Directory, Form, Profile, and Settings.
 class HomeScreen extends StatelessWidget {
@@ -111,6 +112,20 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'customer_ui_fab',
+        backgroundColor: AppColors.primaryBright,
+        foregroundColor: Colors.black,
+        elevation: 6,
+        icon: const Icon(Icons.phone_iphone_rounded, color: Colors.black),
+        label: const Text(
+          'Customer UI (Figma)',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+        onPressed: () => Get.toNamed(AppRoutes.customerHome),
+      ),
+
     );
   }
 }
+
