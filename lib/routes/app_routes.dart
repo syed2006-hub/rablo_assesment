@@ -30,5 +30,14 @@ abstract class AppRoutes {
   static const businessConnects = '/business-connects';
   static const myTrainers = '/my-trainers';
   static const membershipPlansList = '/membership-plans-list';
+
+  // D1CM Explicit Customer Routes (DRD Specifications)
+  static const customerAccountCreation = '/customer-account-creation';
+  static const affiliationScanning = '/affiliation-scanning';
+  static const membershipJoining = '/membership-joining';
+  static const customerDashboardV1 = '/customer-dashboard-v1';
+  static const customerDashboardV2 = '/customer-dashboard-v2';
+  static const customerProfile = '/customer-profile';
 }
+
 

@@ -13,7 +13,10 @@ class PersonalDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(MyProfileController());
+    final controller = Get.isRegistered<MyProfileController>()
+        ? MyProfileController.to
+        : Get.put(MyProfileController(), permanent: true);
+    controller.ensureControllersValid();
 
     return Scaffold(
       backgroundColor: AppColors.slateScaffold,

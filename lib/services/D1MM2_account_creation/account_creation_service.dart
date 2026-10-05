@@ -6,6 +6,7 @@ import '../../models/D1CM1_login/user_model.dart';
 import '../../models/D1MM2_account_creation/account_model.dart';
 import '../D1CM1_login/firebase_auth_service.dart';
 import '../D1MM5_my_profile/profile_service.dart';
+import '../firebase/customer_firebase_service.dart';
 
 /// D1MM2 – Account Creation Service.
 /// Handles member account persistence, onboarding state, and profile synchronization.
@@ -55,8 +56,8 @@ class AccountCreationService extends GetxService {
         }
       }
 
-      // If not resolved from current Firebase user, inspect stored credentials and last user session
-      if (!found && (isLoggedIn || lastUserId != null || lastUserEmail != null)) {
+      // Only inspect stored credentials if is_logged_in flag is actively true and user is known
+      if (!found && isLoggedIn && (lastUserId != null || lastUserEmail != null)) {
         found = await loadStoredOnboardingForUser(lastUserId, lastUserEmail);
         if (found && currentUser.value == null && activeAccount.value != null) {
           final acc = activeAccount.value!;
@@ -70,102 +71,105 @@ class AccountCreationService extends GetxService {
           );
         }
       }
+
+      if (!found) {
+        isOnboarded.value = false;
+        activeAccount.value = null;
+      }
     } catch (e) {
       debugPrint('AccountCreationService storage initialization note: $e');
     }
   }
 
-  /// Check and restore saved onboarding for a specific user (checks uid, email variants, and global backup)
+  /// Check and restore saved onboarding directly from Cloud Firestore (users/{uid})
   Future<bool> loadStoredOnboardingForUser(String? uid, String? email) async {
-    try {
-      _prefs ??= await SharedPreferences.getInstance();
+    final candidateUid = (uid != null && uid.isNotEmpty)
+        ? uid
+        : (email != null && email.isNotEmpty ? email.replaceAll('.', '_').replaceAll('@', '_') : null);
 
-      final keysToTry = <String>[];
-      if (uid != null && uid.isNotEmpty) keysToTry.add(uid);
-      if (email != null && email.isNotEmpty) {
-        keysToTry.add(email);
-        keysToTry.add(email.toLowerCase());
-        keysToTry.add(email.replaceAll('.', '_').replaceAll('@', '_'));
-        keysToTry.add(email.toLowerCase().replaceAll('.', '_').replaceAll('@', '_'));
-        keysToTry.add(email.replaceAll('.', '_'));
-      }
+    if (candidateUid == null || candidateUid.isEmpty) {
+      isOnboarded.value = false;
+      activeAccount.value = null;
+      return false;
+    }
 
-      final lastUserId = _prefs?.getString('last_user_id');
-      if (lastUserId != null && lastUserId.isNotEmpty && !keysToTry.contains(lastUserId)) {
-        keysToTry.add(lastUserId);
-      }
-      final lastUserEmail = _prefs?.getString('last_user_email');
-      if (lastUserEmail != null && lastUserEmail.isNotEmpty) {
-        keysToTry.add(lastUserEmail);
-        keysToTry.add(lastUserEmail.toLowerCase());
-        keysToTry.add(lastUserEmail.replaceAll('.', '_').replaceAll('@', '_'));
-      }
+    // Reset previous account state for the new user check
+    activeAccount.value = null;
 
-      for (final key in keysToTry) {
-        final isSavedOnboarded = _prefs?.getBool('onboarded_$key') ?? false;
-        final accountJsonString = _prefs?.getString('account_data_$key');
-
-        if (accountJsonString != null && accountJsonString.isNotEmpty) {
-          final Map<String, dynamic> data = jsonDecode(accountJsonString) as Map<String, dynamic>;
-          final account = AccountModel.fromJson(data);
+    // 1. Primary Source of Truth: Cloud Firestore at users/{candidateUid}
+    if (Get.isRegistered<CustomerFirebaseService>()) {
+      try {
+        final profileData = await CustomerFirebaseService.to.fetchUserProfile(candidateUid);
+        if (profileData != null && profileData.isNotEmpty && profileData['isOnboarded'] == true) {
+          final account = AccountModel(
+            uid: candidateUid,
+            accountId: profileData['accountId']?.toString() ?? candidateUid,
+            fullName: profileData['fullName']?.toString() ?? '',
+            email: profileData['email']?.toString() ?? (email ?? ''),
+            phoneNumber: profileData['contactNumber']?.toString() ?? profileData['phoneNumber']?.toString() ?? '',
+            gender: profileData['gender']?.toString() ?? 'Male',
+            dateOfBirth: profileData['dateOfBirth']?.toString() ?? profileData['dob']?.toString() ?? '',
+            profession: profileData['profession']?.toString() ?? 'Student',
+            objectives: (profileData['objectives'] as List?)?.map((e) => e.toString()).toList() ?? [],
+            addressLine1: profileData['personalAddress']?.toString() ?? profileData['addressLine1']?.toString() ?? '',
+            addressLine2: profileData['addressLine2']?.toString() ?? '',
+            city: profileData['city']?.toString() ?? '',
+            state: profileData['state']?.toString() ?? '',
+            country: profileData['country']?.toString() ?? 'India',
+            pinCode: profileData['pinCode']?.toString() ?? profileData['pincode']?.toString() ?? '',
+            preferredLanguages: (profileData['preferredLanguages'] as List?)?.map((e) => e.toString()).toList() ?? ['English'],
+            acceptedTerms: profileData['termsAccepted'] == true,
+            promotionalConsent: profileData['promotionalConsent'] == true,
+            registrationDate: DateTime.now(),
+            isOnboarded: true,
+          );
           activeAccount.value = account;
           isOnboarded.value = true;
-
           if (!registeredAccounts.any((a) => a.accountId == account.accountId)) {
             registeredAccounts.insert(0, account);
           }
-
           if (Get.isRegistered<ProfileService>()) {
             ProfileService.to.syncWithAccountModel(account);
           }
           return true;
-        } else if (isSavedOnboarded) {
-          isOnboarded.value = true;
-          return true;
+        } else {
+          // Document does not exist or isOnboarded is false in Cloud Firestore
+          isOnboarded.value = false;
+          activeAccount.value = null;
+          return false;
         }
+      } catch (e) {
+        debugPrint('Firestore loadStoredOnboarding notice: $e');
       }
+    }
 
-      // Check global active_account_data as fallback
-      final globalAccountJson = _prefs?.getString('active_account_data');
-      final isGlobalOnboarded =
-          _prefs?.getBool('is_onboarded') ?? (_prefs?.getBool('last_user_onboarded') ?? false);
+    // 2. Offline fallback ONLY for THIS specific candidateUid
+    try {
+      _prefs ??= await SharedPreferences.getInstance();
+      final isSavedOnboarded = _prefs?.getBool('onboarded_$candidateUid') ?? false;
+      final accountJsonString = _prefs?.getString('account_data_$candidateUid');
 
-      if (globalAccountJson != null && globalAccountJson.isNotEmpty) {
-        final Map<String, dynamic> data = jsonDecode(globalAccountJson) as Map<String, dynamic>;
+      if (accountJsonString != null && accountJsonString.isNotEmpty && isSavedOnboarded) {
+        final Map<String, dynamic> data = jsonDecode(accountJsonString) as Map<String, dynamic>;
         final account = AccountModel.fromJson(data);
-        activeAccount.value = account;
-        isOnboarded.value = account.isOnboarded || isGlobalOnboarded;
-
-        if (!registeredAccounts.any((a) => a.accountId == account.accountId)) {
-          registeredAccounts.insert(0, account);
-        }
-
-        if (Get.isRegistered<ProfileService>()) {
-          ProfileService.to.syncWithAccountModel(account);
-        }
-
-        if (isOnboarded.value) {
-          // Re-link with candidate keys so next lookup is immediate
-          if (uid != null && uid.isNotEmpty) {
-            await _prefs?.setBool('onboarded_$uid', true);
-            await _prefs?.setString('account_data_$uid', globalAccountJson);
+        if (account.isOnboarded) {
+          activeAccount.value = account;
+          isOnboarded.value = true;
+          if (!registeredAccounts.any((a) => a.accountId == account.accountId)) {
+            registeredAccounts.insert(0, account);
           }
-          if (email != null && email.isNotEmpty) {
-            final emailKey = email.replaceAll('.', '_').replaceAll('@', '_');
-            await _prefs?.setBool('onboarded_$emailKey', true);
-            await _prefs?.setString('account_data_$emailKey', globalAccountJson);
+          if (Get.isRegistered<ProfileService>()) {
+            ProfileService.to.syncWithAccountModel(account);
           }
           return true;
         }
-      } else if (isGlobalOnboarded) {
-        isOnboarded.value = true;
-        return true;
       }
     } catch (e) {
       debugPrint('Error loading stored onboarding for user: $e');
     }
 
     isOnboarded.value = false;
+    activeAccount.value = null;
     return false;
   }
 
@@ -182,11 +186,8 @@ class AccountCreationService extends GetxService {
 
       // 1. Mark device and active session flags
       await _prefs?.setBool('is_logged_in', true);
-      await _prefs?.setBool('is_onboarded', true);
-      await _prefs?.setBool('last_user_onboarded', true);
       await _prefs?.setString('last_user_id', completedAccount.accountId);
       await _prefs?.setString('last_user_email', completedAccount.email);
-      await _prefs?.setString('active_account_data', jsonString);
 
       // 2. Persist across all candidate keys
       final candidateKeys = <String>{};
@@ -229,6 +230,35 @@ class AccountCreationService extends GetxService {
       }
     } catch (e) {
       debugPrint('Error saving account to SharedPreferences: $e');
+    }
+
+    // Save directly to Cloud Firestore
+    if (Get.isRegistered<CustomerFirebaseService>()) {
+      final userUid = completedAccount.uid ?? completedAccount.accountId;
+      await CustomerFirebaseService.to.saveUserProfile(userUid, {
+        'accountId': completedAccount.accountId,
+        'fullName': completedAccount.fullName,
+        'email': completedAccount.email,
+        'contactNumber': completedAccount.phoneNumber,
+        'phoneNumber': completedAccount.phoneNumber,
+        'gender': completedAccount.gender,
+        'dateOfBirth': completedAccount.dateOfBirth,
+        'dob': completedAccount.dateOfBirth,
+        'profession': completedAccount.profession,
+        'objectives': completedAccount.objectives,
+        'personalAddress': completedAccount.addressLine1,
+        'addressLine1': completedAccount.addressLine1,
+        'addressLine2': completedAccount.addressLine2,
+        'city': completedAccount.city,
+        'state': completedAccount.state,
+        'country': completedAccount.country,
+        'pinCode': completedAccount.pinCode,
+        'preferredLanguages': completedAccount.preferredLanguages,
+        'termsAccepted': completedAccount.acceptedTerms,
+        'promotionalConsent': completedAccount.promotionalConsent,
+        'isOnboarded': true,
+        'role': 'Customer',
+      });
     }
 
     registeredAccounts.insert(0, completedAccount);

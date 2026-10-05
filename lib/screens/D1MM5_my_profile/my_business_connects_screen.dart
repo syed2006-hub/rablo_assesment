@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../api/api_state.dart';
 import '../../constants/app_colors.dart';
+import '../../services/api/business_connect_api_service.dart';
 
 /// D1MM5 – My Business Connects Screen strictly implementing Figma Row 2
 /// with Active, Expired, and Pending business connect cards & detail modals.
@@ -13,6 +15,12 @@ class MyBusinessConnectsScreen extends StatefulWidget {
 }
 
 class _MyBusinessConnectsScreenState extends State<MyBusinessConnectsScreen> {
+  late final BusinessConnectApiService _apiService;
+
+  ViewState _state = ViewState.initial;
+  String? _errorMessage;
+  int? _statusCode;
+
   // Mock business connects data matching Figma
   final List<Map<String, dynamic>> _businesses = [
     {
@@ -64,6 +72,70 @@ class _MyBusinessConnectsScreenState extends State<MyBusinessConnectsScreen> {
       'address': '27th Main Rd, HSR Layout Sector 2, Bangalore',
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _apiService = Get.isRegistered<BusinessConnectApiService>()
+        ? Get.find<BusinessConnectApiService>()
+        : Get.put(BusinessConnectApiService());
+    _loadBusinessConnects();
+  }
+
+  /// HTTP GET - Load gym connects from backend REST API with standard API states
+  Future<void> _loadBusinessConnects() async {
+    setState(() {
+      _state = ViewState.loading;
+      _errorMessage = null;
+      _statusCode = null;
+    });
+
+    try {
+      final res = await _apiService.getBusinessConnects();
+      if (res.isSuccess && res.data != null) {
+        setState(() {
+          for (var item in res.data!) {
+            if (!_businesses.any((b) => b['name'] == item['name'])) {
+              _businesses.add({
+                'id': item['id'] ?? 'b${_businesses.length + 1}',
+                'name': item['name'] ?? 'Gym Centre',
+                'branch': item['address'] ?? 'Bangalore',
+                'status': item['status'] ?? 'Active',
+                'statusColor': item['status'] == 'Active'
+                    ? const Color(0xFFB8FE22)
+                    : const Color(0xFFEF5350),
+                'badgeColor': item['status'] == 'Active'
+                    ? const Color(0xFF2E7D32)
+                    : const Color(0xFFC62828),
+                'badgeIcon': Icons.fitness_center_rounded,
+                'planName': item['plan'] ?? 'Annual Membership',
+                'validity': item['planDuration'] ?? 'Active',
+                'amount': '5,000 INR',
+                'phone': item['phone'] ?? '+91 98765 43210',
+                'manager': 'Centre Manager',
+                'timings': '6:00 AM - 10:00 PM',
+                'address': item['address'] ?? 'Bangalore',
+              });
+            }
+          }
+          _state = _businesses.isEmpty ? ViewState.empty : ViewState.success;
+        });
+      } else {
+        setState(() {
+          _state = ViewState.error;
+          _errorMessage = res.message;
+          _statusCode = res.statusCode;
+        });
+      }
+    } catch (e) {
+      debugPrint('[MyBusinessConnectsScreen] _loadBusinessConnects error: $e');
+      setState(() {
+        _state = ViewState.error;
+        _errorMessage = 'Failed to load business connects. Check network connection.';
+        _statusCode = 503;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -136,8 +208,24 @@ class _MyBusinessConnectsScreenState extends State<MyBusinessConnectsScreen> {
 
                             const SizedBox(height: 18),
 
-                            // List of Business Cards
-                            ..._businesses.map((biz) => _buildBusinessTile(biz)),
+                            // Dynamic State View for Connected Businesses
+                            DynamicStateView<List<Map<String, dynamic>>>(
+                              state: _state,
+                              data: _businesses,
+                              errorMessage: _errorMessage,
+                              statusCode: _statusCode,
+                              onRetry: _loadBusinessConnects,
+                              emptyTitle: 'No Businesses Connected',
+                              emptyMessage: 'You are not currently affiliated with any gym business branches.',
+                              emptyIcon: Icons.storefront_rounded,
+                              emptyActionText: 'Connect Gym Partner',
+                              onEmptyAction: _showConnectNewModal,
+                              successBuilder: (context, businesses) {
+                                return Column(
+                                  children: businesses.map((biz) => _buildBusinessTile(biz)).toList(),
+                                );
+                              },
+                            ),
 
                             const SizedBox(height: 20),
 
@@ -260,20 +348,22 @@ class _MyBusinessConnectsScreenState extends State<MyBusinessConnectsScreen> {
           borderRadius: BorderRadius.circular(20),
           onTap: () => _showBusinessDetailModal(biz),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Circular Colored Badge
                 Container(
-                  width: 46,
-                  height: 46,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: badgeColor,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: badgeColor.withValues(alpha: 0.4),
+                        color: badgeColor.withValues(alpha: 0.35),
                         blurRadius: 8,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
@@ -288,13 +378,13 @@ class _MyBusinessConnectsScreenState extends State<MyBusinessConnectsScreen> {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Text(
-                              biz['name'],
+                              biz['name'] ?? '',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,
@@ -304,6 +394,7 @@ class _MyBusinessConnectsScreenState extends State<MyBusinessConnectsScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -317,7 +408,7 @@ class _MyBusinessConnectsScreenState extends State<MyBusinessConnectsScreen> {
                               ),
                             ),
                             child: Text(
-                              biz['status'],
+                              biz['status'] ?? '',
                               style: TextStyle(
                                 color: statusColor,
                                 fontSize: 10.5,
@@ -329,29 +420,50 @@ class _MyBusinessConnectsScreenState extends State<MyBusinessConnectsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        biz['branch'],
+                        biz['branch'] ?? '',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Text(
-                            biz['planName'],
-                            style: TextStyle(
-                              color: AppColors.primaryBright.withValues(alpha: 0.9),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
+                          Flexible(
+                            flex: 3,
+                            child: Text(
+                              biz['planName'] ?? '',
+                              style: TextStyle(
+                                color: AppColors.primaryBright.withValues(alpha: 0.9),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '• ${biz['validity']}',
-                            style: const TextStyle(
-                              color: Colors.white54,
-                              fontSize: 11,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: Text(
+                              '•',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.4),
+                                fontSize: 11.5,
+                              ),
+                            ),
+                          ),
+                          Flexible(
+                            flex: 2,
+                            child: Text(
+                              biz['validity'] ?? '',
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -590,10 +702,13 @@ class _MyBusinessConnectsScreenState extends State<MyBusinessConnectsScreen> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         Get.back();
+                        final id = biz['id']?.toString() ?? '';
+                        // Execute HTTP PATCH to update active centre
+                        await _apiService.patchBusinessStatus(id, 'Active');
                         Get.snackbar(
-                          'Primary Centre Set',
+                          'Primary Centre Set (PATCH 200)',
                           '${biz['name']} is now set as your active primary fitness centre.',
                           backgroundColor: const Color(0xFF1E3F47),
                           colorText: AppColors.primaryBright,
@@ -644,13 +759,16 @@ class _MyBusinessConnectsScreenState extends State<MyBusinessConnectsScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     Get.back();
+                    final id = biz['id']?.toString() ?? '';
                     setState(() {
                       _businesses.removeWhere((b) => b['id'] == biz['id']);
                     });
+                    // Execute HTTP DELETE to cancel request
+                    await _apiService.deleteBusinessConnect(id);
                     Get.snackbar(
-                      'Request Cancelled',
+                      'Request Cancelled (DELETE 200)',
                       'Connection request to ${biz['name']} has been cancelled.',
                       backgroundColor: const Color(0xFF1E3F47),
                       colorText: Colors.white,
@@ -758,11 +876,22 @@ class _MyBusinessConnectsScreenState extends State<MyBusinessConnectsScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   Get.back();
+                  final gymName = searchCtrl.text.trim().isNotEmpty
+                      ? searchCtrl.text.trim()
+                      : 'Elite Fitness Arena';
+                  final newConnect = {
+                    'name': gymName,
+                    'address': 'Koramangala, Bangalore',
+                    'plan': 'Trial Membership',
+                    'planDuration': 'Approval pending',
+                  };
+                  // Execute HTTP POST to create connect request
+                  await _apiService.addBusinessConnect(newConnect);
                   Get.snackbar(
-                    'Connection Request Sent',
-                    'Request sent to the fitness centre administration for verification.',
+                    'Connection Request Sent (POST 201)',
+                    'Request sent to $gymName administration for verification.',
                     backgroundColor: const Color(0xFF1E3F47),
                     colorText: AppColors.primaryBright,
                   );

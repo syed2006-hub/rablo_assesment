@@ -3,6 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants/app_colors.dart';
+import '../../routes/app_routes.dart';
+import '../../services/api/business_connect_api_service.dart';
+import '../../services/firebase/customer_firebase_service.dart';
+import '../D1CM5_dashboard_v1/dashboard_v1_controller.dart';
 
 enum ScannerState {
   idle,
@@ -23,12 +27,12 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
   final RxBool isFrontCamera = false.obs;
 
   // 4-Digit PIN Code
-  final RxString enteredCode = ''.obs;
+  final RxString enteredCode = '4001'.obs;
 
   // Gym / Business Information
-  final RxString businessName = "Gold's Gym Arena".obs;
-  final RxString branchName = 'Indiranagar - Platinum Club'.obs;
-  final RxString machineId = 'M-4028'.obs;
+  final RxString businessName = "Rablo Fitness Elite".obs;
+  final RxString branchName = 'Indiranagar 100ft Rd, Bengaluru'.obs;
+  final RxString machineId = 'BIZ-4001'.obs;
 
   // Animation controller for laser scanning beam
   late AnimationController laserAnimationController;
@@ -59,6 +63,16 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
 
     if (!_isTestEnvironment) {
       laserAnimationController.repeat(reverse: true);
+    }
+
+    // Initialize business info according to active affiliation
+    if (Get.isRegistered<CustomerFirebaseService>()) {
+      final aff = CustomerFirebaseService.to.currentAffiliation.value;
+      if (aff != null) {
+        businessName.value = aff['businessName']?.toString() ?? aff['name']?.toString() ?? 'Rablo Fitness Elite';
+        branchName.value = aff['branch']?.toString() ?? 'Indiranagar 100ft Rd, Bengaluru';
+        machineId.value = aff['id']?.toString() ?? 'BIZ-4001';
+      }
     }
   }
 
@@ -148,7 +162,7 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
   /// State 1: Confirmation required?
   void triggerConfirmationRequired() {
     currentState.value = ScannerState.confirming;
-    enteredCode.value = '4578';
+    enteredCode.value = '4001';
     showConfirmationDialog();
   }
 
@@ -156,6 +170,15 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
   void triggerCongratulations() {
     currentState.value = ScannerState.congratulations;
     enteredCode.value = '1076';
+
+    if (Get.isRegistered<CustomerFirebaseService>()) {
+      CustomerFirebaseService.to.hasScannedFirstSession.value = true;
+      final uid = CustomerFirebaseService.to.currentUid.value;
+      if (uid.isNotEmpty) {
+        CustomerFirebaseService.to.redeemDailySession(uid);
+      }
+    }
+
     showCongratulationsDialog();
   }
 
@@ -211,9 +234,41 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
   // FIGMA MODAL POPUP DIALOGS
   // ==========================================
 
+  Future<void> _connectBusinessAffiliation() async {
+    final bizData = {
+      'id': 'BIZ-4001',
+      'businessId': 'BIZ-4001',
+      'name': 'Rablo Fitness Elite',
+      'businessName': 'Rablo Fitness Elite',
+      'branch': 'Indiranagar 100ft Rd, Bengaluru',
+      'pin': enteredCode.value.isNotEmpty ? enteredCode.value : '4001',
+      'managerName': 'Rajesh Sharma',
+      'operatingHours': '06:00 AM - 10:00 PM',
+      'connectedAt': DateTime.now().toIso8601String(),
+    };
+
+    if (Get.isRegistered<CustomerFirebaseService>()) {
+      await CustomerFirebaseService.to.connectBusiness(
+        pin: bizData['pin']!,
+        businessData: bizData,
+      );
+    }
+    if (Get.isRegistered<BusinessConnectApiService>()) {
+      BusinessConnectApiService.to.connectBusiness(bizData);
+    }
+    if (Get.isRegistered<DashboardV1Controller>()) {
+      DashboardV1Controller.to.isAffiliated.value = true;
+      DashboardV1Controller.to.affiliatedBusinessName.value = 'Rablo Fitness Elite';
+      DashboardV1Controller.to.activeStep.value = 1;
+    }
+  }
+
   /// Dialog 1: Confirmation required?
   void showConfirmationDialog() {
     if (Get.isDialogOpen ?? false) Get.back();
+
+    final bool isUserAffiliated = Get.isRegistered<CustomerFirebaseService>() &&
+        CustomerFirebaseService.to.currentAffiliation.value != null;
 
     Get.dialog(
       Dialog(
@@ -247,9 +302,9 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
                   color: AppColors.primaryBright,
                   shape: BoxShape.circle,
                 ),
-                child: const Center(
+                child: Center(
                   child: Icon(
-                    Icons.touch_app_rounded,
+                    isUserAffiliated ? Icons.touch_app_rounded : Icons.business_rounded,
                     color: Colors.black,
                     size: 28,
                   ),
@@ -257,10 +312,10 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
               ),
               const SizedBox(height: 14),
 
-              // Title: Confirmation required?
-              const Text(
-                'Confirmation required?',
-                style: TextStyle(
+              // Title
+              Text(
+                isUserAffiliated ? 'Confirmation required?' : 'Connect Your Business?',
+                style: const TextStyle(
                   color: AppColors.primaryBright,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
@@ -347,8 +402,10 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const TextSpan(
-                      text: '. Would you like to proceed with the check-in?',
+                    TextSpan(
+                      text: isUserAffiliated
+                          ? '. Would you like to proceed with the check-in?'
+                          : '. Would you like to confirm affiliation and proceed to membership?',
                     ),
                   ],
                 ),
@@ -356,7 +413,7 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
 
               const SizedBox(height: 20),
 
-              // Dual Action Buttons: [Cancel] & [Check-in]
+              // Dual Action Buttons: [Cancel] & [Confirm]
               Row(
                 children: [
                   Expanded(
@@ -373,7 +430,7 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
                         onPressed: () {
                           Get.back();
                           currentState.value = ScannerState.idle;
-                          enteredCode.value = '';
+                          enteredCode.value = '4001';
                         },
                         child: const Text(
                           'Cancel',
@@ -392,23 +449,26 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
                       height: 46,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3B9AB2), // Figma Cyan
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.primaryBright,
+                          foregroundColor: Colors.black,
                           elevation: 4,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           Get.back();
+                          if (!isUserAffiliated) {
+                            await _connectBusinessAffiliation();
+                          }
                           // Seamless transition to Congratulations!
                           Future.delayed(const Duration(milliseconds: 200), () {
                             triggerCongratulations();
                           });
                         },
-                        child: const Text(
-                          'Check-in',
-                          style: TextStyle(
+                        child: Text(
+                          isUserAffiliated ? 'Check-in' : 'Confirm & Connect',
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
@@ -429,6 +489,9 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
   /// Dialog 2: Congratulations!
   void showCongratulationsDialog() {
     if (Get.isDialogOpen ?? false) Get.back();
+
+    final bool hasActivePlan = Get.isRegistered<CustomerFirebaseService>() &&
+        CustomerFirebaseService.to.activePlan.value != null;
 
     Get.dialog(
       Dialog(
@@ -473,9 +536,9 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
               const SizedBox(height: 14),
 
               // Title: Congratulations!
-              const Text(
-                'Congratulations!',
-                style: TextStyle(
+              Text(
+                hasActivePlan ? 'Congratulations!' : '🎉 Business Connected!',
+                style: const TextStyle(
                   color: AppColors.primaryBright,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
@@ -495,8 +558,10 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
                     height: 1.45,
                   ),
                   children: [
-                    const TextSpan(
-                        text: 'You have been successfully checked in with '),
+                    TextSpan(
+                        text: hasActivePlan
+                            ? 'You have been successfully checked in with '
+                            : 'You have successfully connected to '),
                     TextSpan(
                       text: businessName.value,
                       style: const TextStyle(
@@ -504,51 +569,87 @@ class ScannerController extends GetxController with GetSingleTickerProviderState
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const TextSpan(
-                      text:
-                          '. Enjoy your workout session! Track your training with ',
+                    TextSpan(
+                      text: hasActivePlan
+                          ? '. Enjoy your workout session!'
+                          : '. You can now choose your membership plan to unlock all gym features.',
                     ),
-                    const TextSpan(
-                      text: 'Rablo Ecosystem',
-                      style: TextStyle(
-                        color: AppColors.primaryBright,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const TextSpan(text: '.'),
                   ],
                 ),
               ),
 
               const SizedBox(height: 22),
 
-              // Cyan CTA Button: Access Membership Pass
-              SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B9AB2),
-                    foregroundColor: Colors.white,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              if (!hasActivePlan) ...[
+                // Dual Action Buttons for Next Step
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.white54, width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () {
+                            Get.back();
+                            Get.offAllNamed(AppRoutes.customerHome);
+                          },
+                          child: const Text('Dashboard', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
                     ),
-                  ),
-                  onPressed: () {
-                    Get.back();
-                    currentState.value = ScannerState.idle;
-                    enteredCode.value = '';
-                  },
-                  child: const Text(
-                    'Access Membership Pass',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryBright,
+                            foregroundColor: Colors.black,
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () {
+                            Get.back();
+                            Get.toNamed(AppRoutes.membershipJoining);
+                          },
+                          child: const Text('Join Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                // Cyan CTA Button: Access Membership Pass
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3B9AB2),
+                      foregroundColor: Colors.white,
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      Get.back();
+                      currentState.value = ScannerState.idle;
+                      enteredCode.value = '4001';
+                    },
+                    child: const Text(
+                      'Access Membership Pass',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

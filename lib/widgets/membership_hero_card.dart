@@ -17,7 +17,7 @@ class MembershipHeroCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 120,
+        constraints: const BoxConstraints(minHeight: 120),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.primaryBright.withValues(alpha: 0.8), width: 1.5),
@@ -32,28 +32,32 @@ class MembershipHeroCard extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16.5),
           child: Stack(
-            fit: StackFit.expand,
+            fit: StackFit.loose,
             children: [
               // Background gym photo
-              Image.asset(
-                'assets/images/gym_hero_bg.png',
-                fit: BoxFit.cover,
-                errorBuilder: (ctx, err, stack) => Container(
-                  color: AppColors.slateCardDark,
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/images/gym_hero_bg.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (ctx, err, stack) => Container(
+                    color: AppColors.slateCardDark,
+                  ),
                 ),
               ),
 
               // Gradient Overlay for readability
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF0C191B).withValues(alpha: 0.88),
-                      const Color(0xFF163238).withValues(alpha: 0.75),
-                      const Color(0xFF0C191B).withValues(alpha: 0.92),
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF0C191B).withValues(alpha: 0.88),
+                        const Color(0xFF163238).withValues(alpha: 0.75),
+                        const Color(0xFF0C191B).withValues(alpha: 0.92),
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
                   ),
                 ),
               ),
@@ -106,8 +110,23 @@ class MembershipHeroCard extends StatelessWidget {
                               fontSize: 12,
                               fontStyle: FontStyle.italic,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 6),
+                          if (membership.businessName.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              membership.businessName,
+                              style: const TextStyle(
+                                color: AppColors.primaryLight,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          const SizedBox(height: 4),
                           Row(
                             children: [
                               Text(

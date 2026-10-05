@@ -21,6 +21,12 @@ import '../screens/D1MM8_webpage_creation/webpage_plans_screen.dart';
 import '../screens/home/customer_home_shell.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/settings/settings_screen.dart';
+import '../screens/D1CM2_account_creation/account_creation_form_screen.dart' as cm2;
+import '../screens/D1CM3_affiliation_scanning/affiliation_scanning_screen.dart';
+import '../screens/D1CM4_membership_joining/membership_joining_screen.dart';
+import '../screens/D1CM5_dashboard_v1/dashboard_v1_screen.dart';
+import '../screens/D1CM6_my_profile/my_profile_screen.dart' as cm6;
+import '../screens/D1CM9_dashboard_v2/dashboard_v2_screen.dart' as cm9;
 import '../screens/widget_screen.dart';
 import 'app_routes.dart';
 
@@ -97,6 +103,38 @@ class AppPages {
     GetPage(
       name: AppRoutes.membershipPlansList,
       page: () => const MembershipPlansListScreen(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // D1CM Customer Module Explicit Routes (DRD Specifications)
+    GetPage(
+      name: AppRoutes.customerAccountCreation,
+      page: () => const cm2.AccountCreationFormScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.affiliationScanning,
+      page: () => const AffiliationScanningScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.membershipJoining,
+      page: () => const MembershipJoiningScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.customerDashboardV1,
+      page: () => const DashboardV1Screen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.customerDashboardV2,
+      page: () => const cm9.DashboardV2Screen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.customerProfile,
+      page: () => const cm6.MyProfileScreen(),
       transition: Transition.rightToLeft,
     ),
 

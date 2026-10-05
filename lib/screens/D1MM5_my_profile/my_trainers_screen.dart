@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../api/api_state.dart';
 import '../../constants/app_colors.dart';
+import '../../services/api/trainer_api_service.dart';
+import '../../widgets/form_feedback_widgets.dart';
 
 /// D1MM5 – My Trainers Screen strictly implementing Figma Row 4
 /// with Trainer cards, Add Trainer form modal, Remove warning dialog, and Success modal.
@@ -12,6 +15,13 @@ class MyTrainersScreen extends StatefulWidget {
 }
 
 class _MyTrainersScreenState extends State<MyTrainersScreen> {
+  late final TrainerApiService _apiService;
+
+  ViewState _state = ViewState.initial;
+  String? _errorMessage;
+  int? _statusCode;
+  bool _isSubmitting = false;
+
   final List<Map<String, dynamic>> _trainers = [
     {
       'id': 't1',
@@ -38,6 +48,51 @@ class _MyTrainersScreenState extends State<MyTrainersScreen> {
       'status': 'Assigned',
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _apiService = Get.isRegistered<TrainerApiService>()
+        ? Get.find<TrainerApiService>()
+        : Get.put(TrainerApiService());
+    _loadTrainers();
+  }
+
+  /// HTTP GET - Load coaches from backend with 4 standard API states
+  Future<void> _loadTrainers() async {
+    setState(() {
+      _state = ViewState.loading;
+      _errorMessage = null;
+      _statusCode = null;
+    });
+
+    try {
+      final res = await _apiService.getTrainers();
+      if (res.isSuccess && res.data != null) {
+        setState(() {
+          for (var item in res.data!) {
+            if (!_trainers.any((t) => t['name'] == item['name'])) {
+              _trainers.add(item);
+            }
+          }
+          _state = _trainers.isEmpty ? ViewState.empty : ViewState.success;
+        });
+      } else {
+        setState(() {
+          _state = ViewState.error;
+          _errorMessage = res.message;
+          _statusCode = res.statusCode;
+        });
+      }
+    } catch (e) {
+      debugPrint('[MyTrainersScreen] _loadTrainers error: $e');
+      setState(() {
+        _state = ViewState.error;
+        _errorMessage = 'Failed to load coaches from backend. Please verify your connection.';
+        _statusCode = 503;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,8 +164,24 @@ class _MyTrainersScreenState extends State<MyTrainersScreen> {
 
                             const SizedBox(height: 18),
 
-                            // List of Trainers
-                            ..._trainers.map((t) => _buildTrainerCard(t)),
+                            // Dynamic State View for Assigned Coaches
+                            DynamicStateView<List<Map<String, dynamic>>>(
+                              state: _state,
+                              data: _trainers,
+                              errorMessage: _errorMessage,
+                              statusCode: _statusCode,
+                              onRetry: _loadTrainers,
+                              emptyTitle: 'No Coaches Assigned',
+                              emptyMessage: 'You do not have any personal trainers assigned yet.',
+                              emptyIcon: Icons.fitness_center_rounded,
+                              emptyActionText: 'Assign New Trainer',
+                              onEmptyAction: _showAddTrainerModal,
+                              successBuilder: (context, coaches) {
+                                return Column(
+                                  children: coaches.map((t) => _buildTrainerCard(t)).toList(),
+                                );
+                              },
+                            ),
 
                             const SizedBox(height: 20),
 
@@ -576,32 +647,59 @@ class _MyTrainersScreenState extends State<MyTrainersScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryBright,
-                            foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          onPressed: () {
+                        child: FormSubmitButton(
+                          text: 'Confirm Assignment',
+                          isSubmitting: _isSubmitting,
+                          backgroundColor: AppColors.primaryBright,
+                          textColor: Colors.black,
+                          onPressed: () async {
+                            // Check for duplicate coach
+                            if (_trainers.any((t) => t['name'] == selectedTrainer)) {
+                              AppFeedback.showError(
+                                title: 'Coach Already Assigned',
+                                message: '$selectedTrainer is already in your active coach roster.',
+                              );
+                              return;
+                            }
+
+                            setModalState(() => _isSubmitting = true);
                             Get.back();
+
+                            final newCoach = {
+                              'id': 't${_trainers.length + 1}',
+                              'name': selectedTrainer,
+                              'role': 'Certified Coach',
+                              'specialty': selectedFocus,
+                              'rating': '4.9',
+                              'reviewsCount': '64',
+                              'sessionsCompleted': 0,
+                              'timing': selectedSlot,
+                              'avatarChar': selectedTrainer[0],
+                              'status': 'Assigned',
+                            };
+
                             setState(() {
-                              _trainers.add({
-                                'id': 't${_trainers.length + 1}',
-                                'name': selectedTrainer,
-                                'role': 'Certified Coach',
-                                'specialty': selectedFocus,
-                                'rating': '4.9',
-                                'reviewsCount': '64',
-                                'sessionsCompleted': 0,
-                                'timing': selectedSlot,
-                                'avatarChar': selectedTrainer[0],
-                                'status': 'Assigned',
-                              });
+                              _trainers.add(newCoach);
+                              _state = ViewState.success;
                             });
-                            _showSuccessModal(selectedTrainer);
+
+                            // Execute HTTP POST to backend REST API / Firestore
+                            final res = await _apiService.addTrainer(newCoach);
+                            setModalState(() => _isSubmitting = false);
+
+                            if (res.isSuccess) {
+                              _showSuccessModal(selectedTrainer);
+                              AppFeedback.showSuccess(
+                                title: 'Coach Assigned',
+                                message: '$selectedTrainer has been scheduled for $selectedSlot.',
+                              );
+                            } else {
+                              AppFeedback.showError(
+                                title: 'Assignment Notice',
+                                message: res.message,
+                              );
+                            }
                           },
-                          child: const Text('Confirm Assignment', style: TextStyle(fontWeight: FontWeight.w900)),
                         ),
                       ),
                     ],
@@ -676,13 +774,16 @@ class _MyTrainersScreenState extends State<MyTrainersScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         Get.back();
+                        final id = t['id']?.toString() ?? '';
                         setState(() {
                           _trainers.removeWhere((item) => item['id'] == t['id']);
                         });
+                        // Execute HTTP DELETE to backend REST API
+                        await _apiService.deleteTrainer(id);
                         Get.snackbar(
-                          'Trainer Removed',
+                          'Trainer Removed (DELETE 200)',
                           '${t['name']} has been removed from your coaches.',
                           backgroundColor: const Color(0xFF1E3F47),
                           colorText: Colors.white,

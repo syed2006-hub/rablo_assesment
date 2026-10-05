@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../api/api_state.dart';
 import '../../constants/app_colors.dart';
+import '../../services/api/membership_api_service.dart';
+import '../../widgets/form_feedback_widgets.dart';
 import 'plan_overview_screen.dart';
 
 /// D1MM3 – Membership Plans List Screen strictly implementing Figma Row 5
@@ -14,6 +17,13 @@ class MembershipPlansListScreen extends StatefulWidget {
 }
 
 class _MembershipPlansListScreenState extends State<MembershipPlansListScreen> {
+  late final MembershipApiService _apiService;
+
+  ViewState _state = ViewState.initial;
+  String? _errorMessage;
+  int? _statusCode;
+  bool _isSubscribing = false;
+
   final List<Map<String, dynamic>> _plans = [
     {
       'id': 'p1',
@@ -66,6 +76,51 @@ class _MembershipPlansListScreenState extends State<MembershipPlansListScreen> {
       ],
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _apiService = Get.isRegistered<MembershipApiService>()
+        ? Get.find<MembershipApiService>()
+        : Get.put(MembershipApiService());
+    _loadPlans();
+  }
+
+  /// HTTP GET - Load plans from backend with 4 standard API states
+  Future<void> _loadPlans() async {
+    setState(() {
+      _state = ViewState.loading;
+      _errorMessage = null;
+      _statusCode = null;
+    });
+
+    try {
+      final res = await _apiService.getMembershipPlans();
+      if (res.isSuccess && res.data != null) {
+        setState(() {
+          for (var item in res.data!) {
+            if (!_plans.any((p) => p['id'] == item['id'])) {
+              _plans.add(item);
+            }
+          }
+          _state = _plans.isEmpty ? ViewState.empty : ViewState.success;
+        });
+      } else {
+        setState(() {
+          _state = ViewState.error;
+          _errorMessage = res.message;
+          _statusCode = res.statusCode;
+        });
+      }
+    } catch (e) {
+      debugPrint('[MembershipPlansListScreen] _loadPlans error: $e');
+      setState(() {
+        _state = ViewState.error;
+        _errorMessage = 'Failed to load membership plans. Please verify your connection.';
+        _statusCode = 503;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +190,22 @@ class _MembershipPlansListScreenState extends State<MembershipPlansListScreen> {
 
                             const SizedBox(height: 18),
 
-                            ..._plans.map((p) => _buildPlanTile(p)),
+                            // Dynamic State View for Membership Plans
+                            DynamicStateView<List<Map<String, dynamic>>>(
+                              state: _state,
+                              data: _plans,
+                              errorMessage: _errorMessage,
+                              statusCode: _statusCode,
+                              onRetry: _loadPlans,
+                              emptyTitle: 'No Plans Available',
+                              emptyMessage: 'No membership packages currently found in the system.',
+                              emptyIcon: Icons.card_membership_rounded,
+                              successBuilder: (context, plans) {
+                                return Column(
+                                  children: plans.map((p) => _buildPlanTile(p)).toList(),
+                                );
+                              },
+                            ),
 
                             const SizedBox(height: 20),
                           ],
@@ -509,25 +579,31 @@ class _MembershipPlansListScreenState extends State<MembershipPlansListScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBright,
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onPressed: () {
+                  child: FormSubmitButton(
+                    text: 'Select Plan',
+                    isSubmitting: _isSubscribing,
+                    backgroundColor: AppColors.primaryBright,
+                    textColor: Colors.black,
+                    onPressed: () async {
+                      if (_isSubscribing) return;
+                      setState(() => _isSubscribing = true);
                       Get.back();
-                      Get.snackbar(
-                        'Plan Selected',
-                        'Proceeding to recharge / checkout for ${p['name']}',
-                        backgroundColor: const Color(0xFF1E3F47),
-                        colorText: AppColors.primaryBright,
-                      );
+                      // Execute HTTP POST to subscribe to plan via backend REST API
+                      final res = await _apiService.subscribePlan(p['id'] ?? 'plan_1');
+                      setState(() => _isSubscribing = false);
+
+                      if (res.isSuccess) {
+                        AppFeedback.showSuccess(
+                          title: 'Plan Activated (POST 200)',
+                          message: 'Subscription for ${p['name']} successfully confirmed.',
+                        );
+                      } else {
+                        AppFeedback.showError(
+                          title: 'Subscription Failed',
+                          message: res.message,
+                        );
+                      }
                     },
-                    child: const Text('Select Plan', style: TextStyle(fontWeight: FontWeight.w900)),
                   ),
                 ),
               ],
