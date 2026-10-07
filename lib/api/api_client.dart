@@ -3,15 +3,11 @@ import 'package:get/get.dart';
 import 'api_endpoints.dart';
 import 'api_response.dart';
 import 'auth_token_manager.dart';
-import 'mock_rest_backend.dart';
 
 /// Centralized HTTP REST Client supporting GET, POST, PUT, PATCH, DELETE
-/// Built on top of GetConnect with automatic mock backend fallback and token injection.
+/// Built on top of GetConnect with live Firebase backend network communication and Bearer token injection.
 class ApiClient extends GetConnect {
   static ApiClient get to => Get.find<ApiClient>();
-
-  /// Set to true to use the embedded mock REST backend, or false for live network calls
-  bool useMockBackend = true;
 
   /// Test switch to simulate network timeouts or API failure for TL validation
   bool simulateNetworkFailure = false;
@@ -37,10 +33,14 @@ class ApiClient extends GetConnect {
     });
 
     httpClient.addResponseModifier((request, response) {
-      debugPrint('[API Client] ${request.method} ${request.url} -> ${response.statusCode}');
+      debugPrint(
+        '[API Client] ${request.method} ${request.url} -> ${response.statusCode}',
+      );
       // Handle 401 Unauthorized token expiry
       if (response.statusCode == 401 && Get.isRegistered<AuthTokenManager>()) {
-        debugPrint('[API Client] 401 Unauthorized encountered. Clearing session.');
+        debugPrint(
+          '[API Client] 401 Unauthorized encountered. Clearing session.',
+        );
         AuthTokenManager.to.clearToken();
       }
       return response;
@@ -63,20 +63,6 @@ class ApiClient extends GetConnect {
       return Response<T>(
         statusCode: 503,
         statusText: 'Simulated Network Failure: Host unreachable (503)',
-      );
-    }
-    if (useMockBackend) {
-      final res = await MockRestBackend.instance.dispatch(
-        method: 'GET',
-        endpoint: url,
-        query: query,
-        headers: headers,
-      );
-      return Response<T>(
-        statusCode: res.statusCode,
-        body: res.body as T?,
-        bodyString: res.bodyString,
-        headers: res.headers,
       );
     }
     return super.get<T>(
@@ -106,21 +92,6 @@ class ApiClient extends GetConnect {
       return Response<T>(
         statusCode: 503,
         statusText: 'Simulated Network Failure: Host unreachable (503)',
-      );
-    }
-    if (useMockBackend) {
-      final res = await MockRestBackend.instance.dispatch(
-        method: 'POST',
-        endpoint: url ?? '',
-        body: body,
-        query: query,
-        headers: headers,
-      );
-      return Response<T>(
-        statusCode: res.statusCode,
-        body: res.body as T?,
-        bodyString: res.bodyString,
-        headers: res.headers,
       );
     }
     return super.post<T>(
@@ -154,21 +125,6 @@ class ApiClient extends GetConnect {
         statusText: 'Simulated Network Failure: Host unreachable (503)',
       );
     }
-    if (useMockBackend) {
-      final res = await MockRestBackend.instance.dispatch(
-        method: 'PUT',
-        endpoint: url,
-        body: body,
-        query: query,
-        headers: headers,
-      );
-      return Response<T>(
-        statusCode: res.statusCode,
-        body: res.body as T?,
-        bodyString: res.bodyString,
-        headers: res.headers,
-      );
-    }
     return super.put<T>(
       url,
       body,
@@ -200,21 +156,6 @@ class ApiClient extends GetConnect {
         statusText: 'Simulated Network Failure: Host unreachable (503)',
       );
     }
-    if (useMockBackend) {
-      final res = await MockRestBackend.instance.dispatch(
-        method: 'PATCH',
-        endpoint: url,
-        body: body,
-        query: query,
-        headers: headers,
-      );
-      return Response<T>(
-        statusCode: res.statusCode,
-        body: res.body as T?,
-        bodyString: res.bodyString,
-        headers: res.headers,
-      );
-    }
     return super.patch<T>(
       url,
       body,
@@ -242,20 +183,6 @@ class ApiClient extends GetConnect {
       return Response<T>(
         statusCode: 503,
         statusText: 'Simulated Network Failure: Host unreachable (503)',
-      );
-    }
-    if (useMockBackend) {
-      final res = await MockRestBackend.instance.dispatch(
-        method: 'DELETE',
-        endpoint: url,
-        query: query,
-        headers: headers,
-      );
-      return Response<T>(
-        statusCode: res.statusCode,
-        body: res.body as T?,
-        bodyString: res.bodyString,
-        headers: res.headers,
       );
     }
     return super.delete<T>(

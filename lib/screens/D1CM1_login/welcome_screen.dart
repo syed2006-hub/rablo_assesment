@@ -4,8 +4,8 @@ import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../routes/app_routes.dart';
 
-/// D1MM1 / D1CM1 – Welcome Page.
-/// Strictly implements Figma `D1MM1 Login 01 - Welcome Page.png`.
+/// D1CM1 – Welcome Page.
+/// Strictly implements Welcome Page design.
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 

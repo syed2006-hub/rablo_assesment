@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
-import '../models/D1MM10_dashboard_v2/customer_membership_model.dart';
+import '../models/D1CM9_dashboard_v2/customer_membership_model.dart';
 
 class MembershipHeroCard extends StatelessWidget {
   final CustomerMembershipModel membership;

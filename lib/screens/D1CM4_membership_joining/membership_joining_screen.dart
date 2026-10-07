@@ -5,7 +5,7 @@ import '../../controllers/D1CM4_membership_joining/membership_joining_controller
 import '../../widgets/common_button.dart';
 import '../../widgets/rush_hour_chart.dart';
 import '../../widgets/trainer_bottom_sheet.dart';
-import '../../models/D1MM10_dashboard_v2/rush_hour_model.dart';
+import '../../models/D1CM9_dashboard_v2/rush_hour_model.dart';
 
 /// D1CM4 – Membership Joining & Update Screen.
 /// Strictly implements DRD specifications for Plan Selection, 2-Hour Preferred Time Slots,

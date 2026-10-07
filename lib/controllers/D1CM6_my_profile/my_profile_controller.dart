@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants/app_colors.dart';
-import '../../models/D1MM5_my_profile/profile_model.dart';
+import '../../models/D1CM6_my_profile/profile_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api/business_connect_api_service.dart';
 import '../../services/D1CM1_login/firebase_auth_service.dart';
-import '../../services/D1MM2_account_creation/account_creation_service.dart';
-import '../../services/D1MM5_my_profile/profile_service.dart';
+import '../../services/D1CM2_account_creation/account_creation_service.dart';
+import '../../services/D1CM6_my_profile/profile_service.dart';
 import '../../services/firebase/customer_firebase_service.dart';
 
 /// D1CM6 – My Profile Controller.

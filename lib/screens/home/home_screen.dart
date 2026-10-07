@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants/app_colors.dart';
 import '../../controllers/home/home_controller.dart';
-import '../D1MM2_account_creation/account_creation_form_screen.dart';
-import '../D1MM3_membership_planning/membership_list_screen.dart';
-import '../D1MM4_dashboard/dashboard_screen.dart';
-import '../D1MM5_my_profile/my_profile_screen.dart';
+import '../D1CM2_account_creation/account_creation_form_screen.dart';
+import '../D1CM4_membership_joining/membership_list_screen.dart';
+import '../D1CM9_dashboard_v2/dashboard_screen.dart';
+import '../D1CM6_my_profile/my_profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../../routes/app_routes.dart';
 

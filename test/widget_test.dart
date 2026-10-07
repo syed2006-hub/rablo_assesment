@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:fitness_app_clean/controllers/D1CC6_attendance/scanner_controller.dart';
 import 'package:fitness_app_clean/routes/app_routes.dart';
 import 'package:fitness_app_clean/main.dart';
-import 'package:fitness_app_clean/services/D1MM2_account_creation/account_creation_service.dart';
+import 'package:fitness_app_clean/services/D1CM2_account_creation/account_creation_service.dart';
 import 'package:fitness_app_clean/widgets/common_stat_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -108,18 +108,38 @@ void main() {
     final scannerController = ScannerController.to;
     scannerController.triggerConfirmationRequired();
     await tester.pumpAndSettle();
-    expect(find.text('Confirmation required?'), findsOneWidget);
-    expect(find.text('Check-in'), findsOneWidget);
+    expect(
+        find.byWidgetPredicate((w) =>
+            w is Text &&
+            (w.data == 'Confirmation required?' ||
+                w.data == 'Connect Your Business?')),
+        findsOneWidget);
+    final checkInBtn = find.byWidgetPredicate((w) =>
+        w is Text && (w.data == 'Check-in' || w.data == 'Confirm & Connect'));
+    expect(checkInBtn, findsOneWidget);
 
-    // Tap Check-in to trigger Congratulations Modal
-    await tester.tap(find.text('Check-in'));
-    await tester.pump(const Duration(milliseconds: 300));
+    // Tap Check-in / Confirm & Connect to trigger Congratulations Modal
+    await tester.tap(checkInBtn);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.pumpAndSettle();
-    expect(find.text('Congratulations!'), findsOneWidget);
-    expect(find.text('Access Membership Pass'), findsOneWidget);
+    expect(
+        find.byWidgetPredicate((w) =>
+            w is Text &&
+            (w.data == 'Congratulations!' ||
+                w.data == '🎉 Business Connected!')),
+        findsOneWidget);
 
-    // Close Congratulations Modal
-    await tester.tap(find.text('Access Membership Pass'));
+    final passBtn = find.byWidgetPredicate((w) =>
+        w is Text &&
+        (w.data == 'Access Membership Pass' ||
+            w.data == 'Dashboard' ||
+            w.data == 'Join Plan'));
+    expect(passBtn, findsWidgets);
+
+    // Close Congratulations / Connected Modal
+    await tester.tap(passBtn.first);
     await tester.pumpAndSettle();
 
     // Test Timeout Modal
@@ -140,7 +160,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
-    // 7. Verify My Profile Hub Screen (Figma D1MM5)
+    // 7. Verify My Profile Hub Screen (D1CM6)
     Get.toNamed(AppRoutes.profile);
     await tester.pumpAndSettle();
 

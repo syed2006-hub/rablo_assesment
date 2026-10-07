@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants/app_colors.dart';
 import '../../controllers/D1CM6_my_profile/my_profile_controller.dart';
-import '../../controllers/D1MM5_my_profile/bank_account_controller.dart';
+import '../../controllers/D1CM6_my_profile/bank_account_controller.dart';
 import '../../routes/app_routes.dart';
-import '../D1MM5_my_profile/bank_account_screen.dart';
-import '../D1MM5_my_profile/personal_details_screen.dart';
+import 'bank_account_screen.dart';
+import 'personal_details_screen.dart';
 
 /// D1CM6 – My Profile Hub Screen.
 /// Strictly implements DRD specifications for Customer Profile:

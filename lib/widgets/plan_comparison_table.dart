@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
-import '../models/D1MM3_membership_planning/plan_offering_model.dart';
+import '../models/D1CM4_membership_joining/plan_offering_model.dart';
 
 class PlanComparisonTableWidget extends StatelessWidget {
   final List<PlanComparisonRow> rows;

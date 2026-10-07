@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants/app_colors.dart';
-import '../../models/D1MM3_membership_planning/member_model.dart';
-import '../../models/D1MM3_membership_planning/membership_plan_model.dart';
+import '../../models/D1CM4_membership_joining/member_model.dart';
+import '../../models/D1CM4_membership_joining/membership_plan_model.dart';
 import '../../routes/app_routes.dart';
-import '../../services/D1MM3_membership_planning/membership_service.dart';
+import '../../services/D1CM4_membership_joining/membership_service.dart';
 import '../../services/firebase/customer_firebase_service.dart';
 import '../D1CM5_dashboard_v1/dashboard_v1_controller.dart';
 

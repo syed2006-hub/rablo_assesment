@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../models/D1CM1_login/user_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/D1CM1_login/firebase_auth_service.dart';
-import '../../services/D1MM2_account_creation/account_creation_service.dart';
+import '../../services/D1CM2_account_creation/account_creation_service.dart';
 import '../../services/firebase/customer_firebase_service.dart';
 import '../../utils/validators.dart';
 import '../../widgets/form_feedback_widgets.dart';

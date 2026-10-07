@@ -4,7 +4,7 @@ import '../../api/api_state.dart';
 import '../../constants/app_colors.dart';
 import '../../models/D1CC6_attendance/attendance_record_model.dart';
 import '../../services/D1CC6_attendance/attendance_service.dart';
-import '../../services/D1MM3_membership_planning/membership_service.dart';
+import '../../services/D1CM4_membership_joining/membership_service.dart';
 import '../../widgets/common_popup.dart';
 import '../../widgets/common_selection_field.dart';
 import '../../widgets/form_feedback_widgets.dart';

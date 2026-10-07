@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants/app_colors.dart';
-import '../../models/D1MM10_dashboard_v2/rush_hour_model.dart';
+import '../../models/D1CM9_dashboard_v2/rush_hour_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/api/business_connect_api_service.dart';
 import '../../services/firebase/customer_firebase_service.dart';

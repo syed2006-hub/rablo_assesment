@@ -10,10 +10,10 @@ import 'routes/app_pages.dart';
 import 'routes/app_routes.dart';
 import 'services/D1CC6_attendance/attendance_service.dart';
 import 'services/D1CM1_login/firebase_auth_service.dart';
-import 'services/D1MM2_account_creation/account_creation_service.dart';
-import 'services/D1MM3_membership_planning/membership_service.dart';
-import 'services/D1MM4_dashboard/dashboard_service.dart';
-import 'services/D1MM5_my_profile/profile_service.dart';
+import 'services/D1CM2_account_creation/account_creation_service.dart';
+import 'services/D1CM4_membership_joining/membership_service.dart';
+import 'services/D1CM9_dashboard_v2/dashboard_service.dart';
+import 'services/D1CM6_my_profile/profile_service.dart';
 import 'services/api/bank_account_api_service.dart';
 import 'services/api/business_connect_api_service.dart';
 import 'services/api/membership_api_service.dart';
@@ -72,7 +72,7 @@ class FitnessApp extends StatelessWidget {
 
     final hasUserSession = (fbUser != null) ||
         (customerFb != null && customerFb.isLoggedIn.value && customerFb.currentUid.value.isNotEmpty) ||
-        (accountService != null && accountService.currentUser.value != null);
+        (accountService != null && (accountService.currentUser.value != null || accountService.activeAccount.value != null));
 
     if (hasUserSession) {
       final bool isOnboarded = (accountService != null && accountService.isOnboarded.value) ||

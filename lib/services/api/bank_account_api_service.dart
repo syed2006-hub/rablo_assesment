@@ -2,8 +2,8 @@ import 'package:get/get.dart';
 import '../../api/api_client.dart';
 import '../../api/api_endpoints.dart';
 import '../../api/api_response.dart';
-import '../../controllers/D1MM5_my_profile/bank_account_controller.dart';
-import '../../models/D1MM5_my_profile/transaction_model.dart';
+import '../../controllers/D1CM6_my_profile/bank_account_controller.dart';
+import '../../models/D1CM6_my_profile/transaction_model.dart';
 import '../firebase/customer_firebase_service.dart';
 
 /// Backend REST API Service for Bank Account & Financial Transactions

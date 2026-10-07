@@ -27,6 +27,7 @@ class AppColors {
   static const Color greyMuted = Color(0xFF8FA2A6);
   static const Color greyDark = Color(0xFF2C3E42);
   static const Color dark = Color(0xFF1E1E1E);
+  static const Color textPrimary = Color(0xFF1E1E1E);
 
   // Additional UI utility colors
   static const Color white = Color(0xFFFFFFFF);

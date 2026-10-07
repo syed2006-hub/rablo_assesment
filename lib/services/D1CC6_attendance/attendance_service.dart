@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import '../../models/D1CC6_attendance/attendance_record_model.dart';
-import '../D1MM3_membership_planning/membership_service.dart';
+import '../D1CM4_membership_joining/membership_service.dart';
 
 /// D1CC6 – Attendance Verification & Monitoring Service.
 class AttendanceService extends GetxService {
@@ -85,5 +85,13 @@ class AttendanceService extends GetxService {
       return true;
     }
     return false;
+  }
+
+  void recordAttendance({
+    required String memberId,
+    required String memberName,
+    required String planName,
+  }) {
+    recordMemberCheckIn(memberId);
   }
 }

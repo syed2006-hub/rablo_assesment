@@ -3,42 +3,37 @@ import '../screens/D1CC6_attendance/attendance_screen.dart';
 import '../screens/D1CM1_login/login_screen.dart';
 import '../screens/D1CM1_login/signup_screen.dart';
 import '../screens/D1CM1_login/welcome_screen.dart';
-import '../screens/D1MM10_dashboard_v2/dashboard_v2_screen.dart';
-import '../screens/D1MM2_account_creation/account_creation_form_screen.dart';
-import '../screens/D1MM3_membership_planning/membership_detail_screen.dart';
-import '../screens/D1MM3_membership_planning/membership_list_screen.dart';
-import '../screens/D1MM3_membership_planning/membership_plans_list_screen.dart';
-import '../screens/D1MM3_membership_planning/plan_listing_screen.dart';
-import '../screens/D1MM3_membership_planning/plan_overview_screen.dart';
-import '../screens/D1MM3_membership_planning/subscription_plans_screen.dart';
-import '../screens/D1MM4_dashboard/dashboard_screen.dart';
-import '../screens/D1MM5_my_profile/bank_account_screen.dart';
-import '../screens/D1MM5_my_profile/my_business_connects_screen.dart';
-import '../screens/D1MM5_my_profile/my_profile_screen.dart';
-import '../screens/D1MM5_my_profile/my_trainers_screen.dart';
-import '../screens/D1MM5_my_profile/personal_details_screen.dart';
-import '../screens/D1MM8_webpage_creation/webpage_plans_screen.dart';
+import '../screens/D1CM2_account_creation/account_creation_form_screen.dart';
+import '../screens/D1CM3_affiliation_scanning/affiliation_scanning_screen.dart';
+import '../screens/D1CM4_membership_joining/membership_detail_screen.dart';
+import '../screens/D1CM4_membership_joining/membership_joining_screen.dart';
+import '../screens/D1CM4_membership_joining/membership_list_screen.dart';
+import '../screens/D1CM4_membership_joining/membership_plans_list_screen.dart';
+import '../screens/D1CM4_membership_joining/plan_listing_screen.dart';
+import '../screens/D1CM4_membership_joining/plan_overview_screen.dart';
+import '../screens/D1CM4_membership_joining/subscription_plans_screen.dart';
+import '../screens/D1CM4_membership_joining/webpage_plans_screen.dart';
+import '../screens/D1CM5_dashboard_v1/dashboard_v1_screen.dart';
+import '../screens/D1CM6_my_profile/bank_account_screen.dart';
+import '../screens/D1CM6_my_profile/my_business_connects_screen.dart';
+import '../screens/D1CM6_my_profile/my_profile_screen.dart';
+import '../screens/D1CM6_my_profile/my_trainers_screen.dart';
+import '../screens/D1CM6_my_profile/personal_details_screen.dart';
+import '../screens/D1CM9_dashboard_v2/dashboard_screen.dart';
+import '../screens/D1CM9_dashboard_v2/dashboard_v2_screen.dart';
 import '../screens/home/customer_home_shell.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/settings/settings_screen.dart';
-import '../screens/D1CM2_account_creation/account_creation_form_screen.dart' as cm2;
-import '../screens/D1CM3_affiliation_scanning/affiliation_scanning_screen.dart';
-import '../screens/D1CM4_membership_joining/membership_joining_screen.dart';
-import '../screens/D1CM5_dashboard_v1/dashboard_v1_screen.dart';
-import '../screens/D1CM6_my_profile/my_profile_screen.dart' as cm6;
-import '../screens/D1CM9_dashboard_v2/dashboard_v2_screen.dart' as cm9;
 import '../screens/widget_screen.dart';
 import 'app_routes.dart';
 
-/// GetX route configurations.
+/// GetX route configurations for Rablo Customer Application.
 class AppPages {
   AppPages._();
 
   static const String initial = AppRoutes.welcome;
 
   static final List<GetPage> routes = [
-
-
     // Customer Module Routes (Figma Implementation)
     GetPage(
       name: AppRoutes.welcome,
@@ -109,7 +104,7 @@ class AppPages {
     // D1CM Customer Module Explicit Routes (DRD Specifications)
     GetPage(
       name: AppRoutes.customerAccountCreation,
-      page: () => const cm2.AccountCreationFormScreen(),
+      page: () => const AccountCreationFormScreen(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -129,16 +124,16 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.customerDashboardV2,
-      page: () => const cm9.DashboardV2Screen(),
+      page: () => const DashboardV2Screen(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
       name: AppRoutes.customerProfile,
-      page: () => const cm6.MyProfileScreen(),
+      page: () => const MyProfileScreen(),
       transition: Transition.rightToLeft,
     ),
 
-    // Staff / Desk Administration Routes (Day 5)
+    // Authentication & Core Navigation Routes
     GetPage(
       name: AppRoutes.login,
       page: () => const LoginScreen(),
@@ -206,4 +201,3 @@ class AppPages {
     ),
   ];
 }
-

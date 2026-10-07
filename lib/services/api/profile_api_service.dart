@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import '../../api/api_client.dart';
 import '../../api/api_endpoints.dart';
 import '../../api/api_response.dart';
-import '../../models/D1MM5_my_profile/profile_model.dart';
+import '../../models/D1CM6_my_profile/profile_model.dart';
 import '../D1CM1_login/firebase_auth_service.dart';
 import '../firebase/customer_firebase_service.dart';
 

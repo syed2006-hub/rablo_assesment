@@ -3,7 +3,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   /// Base API URL (can be switched to localhost, staging, or production)
-  static const String baseUrl = 'http://localhost:8080/api/';
+  static const String baseUrl = 'http://localhost:8080/api';
   // 1. Profile & Authentication Endpoints
   static const String profile = '/profile';
   static const String profileVerification = '/profile/verification';

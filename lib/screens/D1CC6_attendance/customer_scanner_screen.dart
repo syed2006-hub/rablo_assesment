@@ -246,6 +246,7 @@ class CustomerScannerScreen extends StatelessWidget {
 
           // Connect Business Button when user is not affiliated yet
           Obx(() {
+            final _ = controller.businessName.value;
             final isAffiliated = Get.isRegistered<CustomerFirebaseService>() &&
                 CustomerFirebaseService.to.currentAffiliation.value != null;
             if (isAffiliated) {
